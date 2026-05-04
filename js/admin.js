@@ -11,14 +11,14 @@
   // dejar vacío ('') para usar rutas relativas.
   // Si el frontend corre en otro puerto o dominio, poner la URL completa:
   // const API_BASE = 'http://localhost:3000';
-  const API_BASE = 'http://localhost:3000';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ─────────────────────────────────────────────
-  const form          = document.getElementById('dashboardForm');
-  const assetInput    = document.getElementById('asset_name');
-  const dropdown      = document.getElementById('assetDropdown');
-  const errorBanner   = document.getElementById('errorBanner');
-  const errorMessage  = document.getElementById('errorMessage');
+  const form = document.getElementById('dashboardForm');
+  const assetInput = document.getElementById('asset_name');
+  const dropdown = document.getElementById('assetDropdown');
+  const errorBanner = document.getElementById('errorBanner');
+  const errorMessage = document.getElementById('errorMessage');
 
   // ── Autocomplete ─────────────────────────────────────────
   let debounceTimer = null;
@@ -44,7 +44,7 @@
 
   async function fetchSuggestions(q) {
     try {
-      const res  = await fetch(`${API_BASE}/assets?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`${API_BASE}/assets?q=${encodeURIComponent(q)}`);
       const list = await res.json();
       renderDropdown(list);
     } catch {
@@ -88,22 +88,22 @@
     e.preventDefault();
     hideError();
 
-    const asset_name           = assetInput.value.trim();
-    const total_paneles        = document.getElementById('total_paneles').value.trim();
-    const puntos_calientes     = document.getElementById('puntos_calientes').value.trim();
+    const asset_name = assetInput.value.trim();
+    const total_paneles = document.getElementById('total_paneles').value.trim();
+    const puntos_calientes = document.getElementById('puntos_calientes').value.trim();
     const capacidad_instalada_mw = document.getElementById('capacidad_instalada_mw').value.trim();
-    const unidad               = document.getElementById('unidad').value;
-    const files_url            = document.getElementById('files_url').value.trim();
+    const unidad = document.getElementById('unidad').value;
+    const files_url = document.getElementById('files_url').value.trim();
 
     // Validation
     const errors = [];
-    if (!asset_name)              errors.push('El nombre de instalación es requerido.');
+    if (!asset_name) errors.push('El nombre de instalación es requerido.');
     if (!total_paneles || Number(total_paneles) <= 0)
-                                  errors.push('Total de paneles debe ser un número positivo.');
+      errors.push('Total de paneles debe ser un número positivo.');
     if (!puntos_calientes || Number(puntos_calientes) <= 0)
-                                  errors.push('Puntos calientes debe ser un número positivo.');
+      errors.push('Puntos calientes debe ser un número positivo.');
     if (!capacidad_instalada_mw || Number(capacidad_instalada_mw) <= 0)
-                                  errors.push('Capacidad instalada debe ser un número positivo.');
+      errors.push('Capacidad instalada debe ser un número positivo.');
 
     if (errors.length) {
       showError(errors.join(' '));
@@ -138,7 +138,7 @@
 
   // ── Utility ───────────────────────────────────────────────
   function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
 })();
