@@ -128,7 +128,7 @@ html, body {
   padding: .4rem .85rem; cursor: pointer;
   transition: background .2s, color .2s;
 }
-.unit-btn.active { background: var(--clr-amber); color: #fff; }
+.unit-btn.active { background: #02152a; color: #fff; }
 
 /* Files button */
 .btn-files {

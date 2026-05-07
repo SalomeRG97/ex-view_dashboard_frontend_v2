@@ -201,7 +201,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: .5rem;
-  background: linear-gradient(135deg, var(--clr-amber), var(--clr-amber-2));
+  background: #02152a;
   color: #fff;
   font-family: var(--ff);
   font-size: .9rem;
@@ -211,14 +211,14 @@ body {
   padding: .8rem 1.5rem;
   cursor: pointer;
   transition: opacity .2s, transform .15s, box-shadow .2s;
-  box-shadow: 0 4px 20px rgba(245, 158, 11, .3);
+  box-shadow: 0 4px 20px rgba(2,21,42,.35);
   text-decoration: none;
 }
 
 .btn-primary:hover {
-  opacity: .92;
+  opacity: .88;
   transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(245, 158, 11, .4);
+  box-shadow: 0 8px 28px rgba(2,21,42,.5);
 }
 
 .btn-primary:active {

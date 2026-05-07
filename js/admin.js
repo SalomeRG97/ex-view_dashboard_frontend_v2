@@ -10,8 +10,8 @@
   // Si el frontend se sirve desde el mismo servidor (localhost:3000),
   // dejar vacío ('') para usar rutas relativas.
   // Si el frontend corre en otro puerto o dominio, poner la URL completa:
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  // const API_BASE = 'http://localhost:3000';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ─────────────────────────────────────────────
   const form = document.getElementById('dashboardForm');
