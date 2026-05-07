@@ -10,8 +10,8 @@
   // Si el frontend se sirve desde el mismo servidor (localhost:3000),
   // dejar vacío ('') para usar rutas relativas.
   // Si el frontend corre en otro puerto o dominio, poner la URL completa:
-  // const API_BASE = 'http://localhost:3000';
-  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'http://localhost:3000';
+  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ──────────────────────────────────────────────
   const loadingScreen = document.getElementById('loadingScreen');
@@ -55,7 +55,6 @@
     return {
       asset_name: p.get('asset_name') || '',
       total_paneles: p.get('total_paneles') || '',
-      puntos_calientes: p.get('puntos_calientes') || '',
       capacidad_instalada_mw: p.get('capacidad_instalada_mw') || '',
       unidad: p.get('unidad') || 'MW',
       files_url: p.get('files_url') || '',
@@ -230,15 +229,18 @@
 
   // ── Render ────────────────────────────────────────────────
   function renderAll(data, unit) {
+    // Todos los tipos (para gráfica 1 y tabla)
     const counts = data.map(d => d.recuento);
-    const inefs = data.map(d => d.ineficiencia_pct);
-    const losses = data.map(d => d.perdida);
+    const totalAnomalies = counts.reduce((a, b) => a + b, 0);
+
+    // Solo tipos con inefficiency (para gráficas 2 y 3)
+    const dataWithInef = data.filter(d => d.ineficiencia_pct !== null);
+    const maxInef = dataWithInef.length
+      ? Math.max(...dataWithInef.map(d => d.ineficiencia_pct))
+      : 0;
+    const totalLoss = dataWithInef.reduce((a, d) => a + (d.perdida || 0), 0);
 
     // KPIs
-    const totalAnomalies = counts.reduce((a, b) => a + b, 0);
-    const maxInef = Math.max(...inefs);
-    const totalLoss = losses.reduce((a, b) => a + b, 0);
-
     kpiTotalVal.textContent = totalAnomalies.toLocaleString('es-MX');
     kpiInefVal.textContent = `${fmt(maxInef, 1)}%`;
     kpiLossVal.textContent = fmt(totalLoss, 2);
@@ -251,13 +253,26 @@
     destroyChart(chartInef);
     destroyChart(chartLoss);
 
+    // Gráfica 1 — todos los tipos
     chartCount = buildCountChart('chartCount', data);
-    chartInef = buildHorizontalStacked('chartInef', data, 'ineficiencia_pct', '%');
-    chartLoss = buildHorizontalStacked('chartLoss', data, 'perdida', unit);
 
-    // Table — usar colores por tipo
+    // Gráficas 2 y 3 — solo tipos con inefficiency definida
+    chartInef = buildHorizontalStacked('chartInef', dataWithInef, 'ineficiencia_pct', '%');
+    chartLoss = buildHorizontalStacked('chartLoss', dataWithInef, 'perdida', unit);
+
+    // Table — todos los tipos; inef muestra '—' si no aplica
     tableBody.innerHTML = data.map(d => {
       const clr = getAnomalyColor(d.type);
+      const hasInef = d.ineficiencia_pct !== null;
+      const inefCell = hasInef
+        ? `<div class="inef-bar-wrap">
+             <div class="inef-bar-bg">
+               <div class="inef-bar-fill" style="width:${Math.min(d.ineficiencia_pct, 100)}%;background:${clr}"></div>
+             </div>
+             <span>${fmt(d.ineficiencia_pct, 1)}%</span>
+           </div>`
+        : `<span style="color:var(--clr-muted)">—</span>`;
+
       return `
       <tr>
         <td>
@@ -266,15 +281,8 @@
           </span>
         </td>
         <td>${d.recuento.toLocaleString('es-MX')}</td>
-        <td>
-          <div class="inef-bar-wrap">
-            <div class="inef-bar-bg">
-              <div class="inef-bar-fill" style="width:${Math.min(d.ineficiencia_pct, 100)}%;background:${clr}"></div>
-            </div>
-            <span>${fmt(d.ineficiencia_pct, 1)}%</span>
-          </div>
-        </td>
-        <td>${fmt(d.perdida, 4)}</td>
+        <td>${inefCell}</td>
+        <td>${hasInef ? fmt(d.perdida, 4) : '<span style="color:var(--clr-muted)">—</span>'}</td>
       </tr>`;
     }).join('');
   }
@@ -297,7 +305,6 @@
       const query = new URLSearchParams({
         asset_name: params.asset_name,
         total_paneles: params.total_paneles,
-        puntos_calientes: params.puntos_calientes,
         capacidad_instalada_mw: params.capacidad_instalada_mw,
         unidad: params.unidad,
       });
@@ -368,7 +375,7 @@
   urlParams = getParams();
   console.log('[dashboard] URL params:', urlParams);
 
-  const required = ['asset_name', 'total_paneles', 'puntos_calientes', 'capacidad_instalada_mw'];
+  const required = ['asset_name', 'total_paneles', 'capacidad_instalada_mw'];
   const missing = required.filter(k => !urlParams[k]);
 
   if (missing.length) {
