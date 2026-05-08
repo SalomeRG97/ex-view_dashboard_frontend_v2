@@ -61,6 +61,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  width: 100%;
+  min-width: 0;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
@@ -341,6 +343,56 @@ body {
   }
 }
 
+/* ── Toggle Sí / No ─────────────────────────────────────── */
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.toggle-group label {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--clr-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 0;
+}
+
+.toggle-pill {
+  display: inline-flex;
+  border: 1px solid var(--clr-border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--clr-surface-2);
+}
+
+.toggle-pill button {
+  font-family: var(--ff);
+  font-size: .8rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--clr-muted);
+  padding: .35rem .85rem;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  border-radius: 999px;
+}
+
+.toggle-pill button.active {
+  background: #02152a;
+  color: #fff;
+}
+
+.modulos-field {
+  transition: opacity .2s;
+}
+
+.modulos-field.hidden-field {
+  display: none;
+}
+
 /* ── Error banner ────────────────────────────────────────── */
 .error-banner {
   display: flex;
@@ -356,6 +408,12 @@ body {
 }
 
 /* ── Responsive ──────────────────────────────────────────── */
+html, body { overflow-x: hidden; }
+
+@media (max-width: 600px) {
+  .page-wrapper { padding: 1.75rem 1rem 3rem; }
+}
+
 @media (max-width: 520px) {
   .form-row {
     grid-template-columns: 1fr;
@@ -370,4 +428,42 @@ body {
     width: 100%;
     justify-content: center;
   }
+
+  /* Toggle: centrar en pantallas pequeñas */
+  .toggle-group {
+    flex-wrap: wrap;
+    gap: .4rem;
+  }
+
+  /* Inputs y selects: ancho completo */
+  .form-group input,
+  .form-group select {
+    width: 100%;
+  }
+
+  .site-header {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .page-wrapper { padding: 1.25rem .75rem 2.5rem; }
+
+  .form-group input,
+  .form-group select {
+    font-size: .82rem;
+    padding: .55rem .75rem;
+  }
+
+  .btn-primary {
+    font-size: .85rem;
+    padding: .75rem 1.2rem;
+  }
+
+  .site-title { font-size: 1.1rem; }
+  .site-subtitle { font-size: .72rem; }
+
+  .card-header { padding: 1.25rem 1.25rem 0; }
+  .form { padding: 1.25rem; }
 }

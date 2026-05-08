@@ -13,6 +13,7 @@
   }
 
   // ── URL del backend ───────────────────────────────────────
+  // const API_BASE = 'http://localhost:3000';
   const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   const form = document.getElementById('loginForm');

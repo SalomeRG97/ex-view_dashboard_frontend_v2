@@ -56,6 +56,7 @@
     return {
       installation: p.get('installation') || '',
       total_paneles: p.get('total_paneles') || '',
+      modulos_desconectados: p.get('modulos_desconectados') || '',
       capacidad_instalada_mw: p.get('capacidad_instalada_mw') || '',
       unidad: p.get('unidad') || 'MW',
       files_url: p.get('files_url') || '',
@@ -99,6 +100,28 @@
     'shading': '#05fdf6',
   };
 
+  // ── Mapa de nombres visibles ────────────────────────────
+  const LABEL_MAP = {
+    hotspot_critical: 'PC Crítico',
+    dba: 'DBA',
+    hotspot_mild: 'PC Leve',
+    shading: 'Sombras',
+    hotspot_permissible: 'PC Permisible',
+    dirt: 'Suciedad',
+    vegetation: 'Vegetación',
+    soiling: 'Soiling',
+    pid: 'PID',
+    diode_failure: 'Falla en diodo',
+    string_failure: 'String desconectado',
+    other: 'Otros',
+    broken_glass_hotspot: 'Daño físico',
+    reverse_polarity: 'Polaridad inversa',
+  };
+
+  function getLabel(type) {
+    return LABEL_MAP[(type || '').toLowerCase()] || type;
+  }
+
   function getAnomalyColor(type) {
     return ANOMALY_COLORS[(type || '').toLowerCase()] || '#94a3b8';
   }
@@ -137,7 +160,7 @@
       type: 'bar',
       plugins: [ChartDataLabels],
       data: {
-        labels: data.map(d => d.type),
+        labels: data.map(d => getLabel(d.type)),
         datasets: [{
           data: data.map(d => d.recuento),
           backgroundColor: data.map(d => getAnomalyColor(d.type)),
@@ -174,7 +197,7 @@
     const ctx = document.getElementById(canvasId).getContext('2d');
     const sorted = [...data].sort((a, b) => b[valueKey] - a[valueKey]);
     const datasets = sorted.map(d => ({
-      label: d.type,
+      label: getLabel(d.type),
       data: [Number(d[valueKey])],
       backgroundColor: getAnomalyColor(d.type),
       borderWidth: 0,
@@ -188,7 +211,7 @@
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-        layout: { padding: { right: 12 } },
+        layout: { padding: { right: 70 } },
         plugins: {
           legend: {
             display: true,
@@ -204,16 +227,12 @@
             },
           },
           datalabels: {
-            color: c => isLightColor(c.dataset.backgroundColor) ? '#374151' : '#ffffff',
+            color: c => isLightColor(c.dataset.backgroundColor) ? '#0f172a' : '#ffffff',
             font: { weight: '700', size: 10, family: 'Inter' },
             anchor: 'center',
             align: 'center',
-            clamp: true,
+            offset: 0,
             formatter: v => v > 0 ? fmt(v, 2) : '',
-            display: c => {
-              const bar = c.chart.getDatasetMeta(c.datasetIndex).data[c.dataIndex];
-              return bar && bar.width > 30;
-            },
           },
         },
         scales: {
@@ -222,6 +241,56 @@
             ticks: { ...LIGHT_AXIS.ticks, callback: v => unit ? `${fmt(v, 1)} ${unit}` : v }
           },
           y: { stacked: true, grid: { display: false }, ticks: { display: false }, border: { display: false } },
+        },
+        animation: { duration: 600, easing: 'easeOutQuart' },
+      },
+    });
+  }
+
+  // Chart 2 & 3 alternativo: barras individuales (cuando hay string_failure)
+  function buildHorizontalGrouped(canvasId, data, valueKey, unit = '') {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    const sorted = [...data].sort((a, b) => b[valueKey] - a[valueKey]);
+    return new Chart(ctx, {
+      type: 'bar',
+      plugins: [ChartDataLabels],
+      data: {
+        labels: sorted.map(d => getLabel(d.type)),
+        datasets: [{
+          data: sorted.map(d => Number(d[valueKey])),
+          backgroundColor: sorted.map(d => getAnomalyColor(d.type)),
+          borderWidth: 0,
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { right: 70 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...LIGHT_TOOLTIP,
+            callbacks: {
+              label: c => ` ${c.label}: ${fmt(c.parsed.x, 2)}${unit ? ' ' + unit : ''}`,
+            },
+          },
+          datalabels: {
+            color: '#374151',
+            font: { weight: '700', size: 10, family: 'Inter' },
+            anchor: 'end',
+            align: 'right',
+            offset: 4,
+            formatter: v => v > 0 ? fmt(v, 2) : '',
+          },
+        },
+        scales: {
+          x: {
+            ...LIGHT_AXIS, beginAtZero: true,
+            ticks: { ...LIGHT_AXIS.ticks, callback: v => unit ? `${fmt(v, 1)} ${unit}` : v },
+          },
+          y: { ...LIGHT_AXIS, grid: { display: false } },
         },
         animation: { duration: 600, easing: 'easeOutQuart' },
       },
@@ -279,8 +348,15 @@
     chartCount = buildCountChart('chartCount', data);
 
     // Gráficas 2 y 3 — solo tipos con inefficiency definida
-    chartInef = buildHorizontalStacked('chartInef', dataWithInefDisplay, 'ineficiencia_pct', '%');
-    chartLoss = buildHorizontalStacked('chartLoss', dataWithInefDisplay, 'perdida', unidadVisual);
+    // Si existe string_failure (inef=100%), usar barras individuales para mejor visualización
+    const hasStringFailure = dataWithInef.some(d => d.type === 'string_failure');
+    if (hasStringFailure) {
+      chartInef = buildHorizontalGrouped('chartInef', dataWithInefDisplay, 'ineficiencia_pct', '%');
+      chartLoss = buildHorizontalGrouped('chartLoss', dataWithInefDisplay, 'perdida', unidadVisual);
+    } else {
+      chartInef = buildHorizontalStacked('chartInef', dataWithInefDisplay, 'ineficiencia_pct', '%');
+      chartLoss = buildHorizontalStacked('chartLoss', dataWithInefDisplay, 'perdida', unidadVisual);
+    }
 
     // Table — todos los tipos; inef y pérdida muestran '—' si no aplica
     tableBody.innerHTML = data.map(d => {
@@ -303,7 +379,7 @@
       <tr>
         <td>
           <span class="type-pill" style="border-color:${clr}55;background:${clr}18;color:${clr}">
-            ${d.type}
+            ${getLabel(d.type)}
           </span>
         </td>
         <td>${d.recuento.toLocaleString('es-MX')}</td>
@@ -332,6 +408,7 @@
       const query = new URLSearchParams({
         installation: params.installation,
         total_paneles: params.total_paneles,
+        modulos_desconectados: params.modulos_desconectados,
         capacidad_instalada_mw: params.capacidad_instalada_mw,
         unidad: params.unidad,
       });

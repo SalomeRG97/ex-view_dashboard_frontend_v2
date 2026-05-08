@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="css/admin.css?v=2.2" />
+  <link rel="stylesheet" href="css/admin.css?v=2.3" />
 </head>
 
 <body>
@@ -42,25 +42,36 @@
         <!-- Asset con autocomplete -->
         <div class="form-group autocomplete-wrap">
           <label for="installation">Nombre de instalación <span class="required">*</span></label>
-          <input id="installation" name="installation" type="text" placeholder="Ej: Planta Solar Norte" autocomplete="off"
-            required />
+          <input id="installation" name="installation" type="text" placeholder="Ej: Planta Solar Norte"
+            autocomplete="off" required />
           <ul id="assetDropdown" class="autocomplete-list" hidden></ul>
           <span class="hint">Escribe para buscar instalaciones en la base de datos.</span>
         </div>
 
-        <!-- Paneles + Puntos calientes -->
+        <!-- 1. Total de paneles -->
+        <div class="form-group">
+          <label for="total_paneles">Total de paneles <span class="required">*</span></label>
+          <input id="total_paneles" name="total_paneles" type="number" min="1" placeholder="Ej: 500" required />
+        </div>
+
+        <!-- 2. Strings desconectados: toggle izquierda, módulos derecha (si Sí) -->
         <div class="form-row">
           <div class="form-group">
-            <label for="total_paneles">Total de paneles <span class="required">*</span></label>
-            <input id="total_paneles" name="total_paneles" type="number" min="1" placeholder="Ej: 5000" required />
+            <div class="toggle-group">
+              <label>¿Strings desconectados?</label>
+              <div class="toggle-pill" role="group" aria-label="¿Existen strings desconectados?">
+                <button type="button" id="toggleStringNo" class="active" aria-pressed="true">No</button>
+                <button type="button" id="toggleStringYes" aria-pressed="false">Sí</button>
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="puntos_calientes">Módulos string desconectados <span class="required">*</span></label>
-            <input id="puntos_calientes" name="puntos_calientes" type="number" min="1" placeholder="Ej: 2" required />
+          <div id="modulosGroup" class="form-group modulos-field hidden-field">
+            <label for="modulos_desconectados">Módulos desconectados <span class="required">*</span></label>
+            <input id="modulos_desconectados" name="modulos_desconectados" type="number" min="1" placeholder="Ej: 2" />
           </div>
         </div>
 
-        <!-- Capacidad + Unidad -->
+        <!-- 3. Capacidad + Unidad -->
         <div class="form-row">
           <div class="form-group">
             <label for="capacidad_instalada_mw">Capacidad instalada <span class="required">*</span></label>
@@ -101,7 +112,7 @@
 
   </main>
 
-  <script src="js/admin.js?v=2.2"></script>
+  <script src="js/admin.js?v=2.3"></script>
 </body>
 
 </html>
