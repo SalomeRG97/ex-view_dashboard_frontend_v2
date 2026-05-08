@@ -53,7 +53,7 @@
   function getParams() {
     const p = new URLSearchParams(window.location.search);
     return {
-      asset_name: p.get('asset_name') || '',
+      installation: p.get('installation') || '',
       total_paneles: p.get('total_paneles') || '',
       capacidad_instalada_mw: p.get('capacidad_instalada_mw') || '',
       unidad: p.get('unidad') || 'MW',
@@ -329,7 +329,7 @@
   async function fetchAndRender(params) {
     try {
       const query = new URLSearchParams({
-        asset_name: params.asset_name,
+        installation: params.installation,
         total_paneles: params.total_paneles,
         capacidad_instalada_mw: params.capacidad_instalada_mw,
         unidad: params.unidad,
@@ -349,7 +349,7 @@
         return showError('Error al cargar', json.error || 'No se pudo cargar el dashboard.');
       }
 
-      const { data, files_url, asset_name, unidad } = json;
+      const { data, files_url, installation, unidad } = json;
 
       // Sync unit buttons
       currentUnit = unidad;
@@ -357,7 +357,7 @@
       unitMwBtn.classList.toggle('active', unidad === 'MW');
 
       // Header meta
-      assetNameEl.textContent = asset_name || '—';
+      assetNameEl.textContent = installation || '—';
       lastUpdatedEl.textContent = new Date().toLocaleString('es-MX', {
         dateStyle: 'short', timeStyle: 'short',
       });
@@ -401,7 +401,7 @@
   urlParams = getParams();
   console.log('[dashboard] URL params:', urlParams);
 
-  const required = ['asset_name', 'total_paneles', 'capacidad_instalada_mw'];
+  const required = ['installation', 'total_paneles', 'capacidad_instalada_mw'];
   const missing = required.filter(k => !urlParams[k]);
 
   if (missing.length) {

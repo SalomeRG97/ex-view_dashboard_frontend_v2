@@ -9,7 +9,7 @@
   // ── Auth Check ─────────────────────────────────────────────
   // Si no hay sesión, redirigir al login
   if (sessionStorage.getItem('admin_logged_in') !== 'true') {
-    window.location.replace('login.html');
+    window.location.replace('/dashboard/login');
     return;
   }
 
@@ -22,7 +22,7 @@
 
   // ── DOM refs ─────────────────────────────────────────────
   const form = document.getElementById('dashboardForm');
-  const assetInput = document.getElementById('asset_name');
+  const assetInput = document.getElementById('installation');
   const dropdown = document.getElementById('assetDropdown');
   const errorBanner = document.getElementById('errorBanner');
   const errorMessage = document.getElementById('errorMessage');
@@ -95,7 +95,7 @@
     e.preventDefault();
     hideError();
 
-    const asset_name = assetInput.value.trim();
+    const installation = assetInput.value.trim();
     const total_paneles = document.getElementById('total_paneles').value.trim();
     const puntos_calientes = document.getElementById('puntos_calientes').value.trim();
     const capacidad_instalada_mw = document.getElementById('capacidad_instalada_mw').value.trim();
@@ -104,7 +104,7 @@
 
     // Validation
     const errors = [];
-    if (!asset_name) errors.push('El nombre de instalación es requerido.');
+    if (!installation) errors.push('El nombre de instalación es requerido.');
     if (!total_paneles || Number(total_paneles) <= 0)
       errors.push('Total de paneles debe ser un número positivo.');
     if (!puntos_calientes || Number(puntos_calientes) <= 0)
@@ -119,7 +119,7 @@
 
     // Build URL params
     const params = new URLSearchParams({
-      asset_name,
+      installation,
       total_paneles,
       puntos_calientes,
       capacidad_instalada_mw,
@@ -128,7 +128,7 @@
     if (files_url) params.set('files_url', files_url);
 
     params.set('admin', 'true'); // Flag to indicate it comes from the form
-    window.location.href = `dashboard.html?${params.toString()}`;
+    window.location.href = `/dashboard/dashboard?${params.toString()}`;
   });
 
   // ── Error helpers ─────────────────────────────────────────
