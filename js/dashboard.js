@@ -230,24 +230,45 @@
   // ── Render ────────────────────────────────────────────────
   function renderAll(data, unit) {
     // Todos los tipos (para gráfica 1 y tabla)
-    const counts = data.map(d => d.recuento);
-    const totalAnomalies = counts.reduce((a, b) => a + b, 0);
+    const totalAnomalies = data.reduce((a, d) => a + d.recuento, 0);
 
     // Solo tipos con inefficiency (para gráficas 2 y 3)
-    const dataWithInef = data.filter(d => d.ineficiencia_pct !== null);
+    // Nota: usa != null (no !==) para capturar tanto null como undefined
+    // (el backend antiguo devuelve `perdida`, el nuevo devuelve `perdida_kwh`)
+    const dataWithInef = data.filter(d => d.ineficiencia_pct != null && d.perdida_kwh != null);
+    console.log('[renderAll] sample row keys:', data[0] ? Object.keys(data[0]) : '(sin datos)');
+    console.log('[renderAll] dataWithInef.length:', dataWithInef.length);
     const maxInef = dataWithInef.length
       ? Math.max(...dataWithInef.map(d => d.ineficiencia_pct))
       : 0;
-    const totalLoss = dataWithInef.reduce((a, d) => a + (d.perdida || 0), 0);
+
+    // ── Unidad visual controlada por el botón kW / MW ───────
+    // El cálculo interno siempre está en kWh (perdida_kwh).
+    // El botón determina si se muestra en kWh o MWh.
+    const totalLoss_kwh = dataWithInef.reduce((a, d) => a + (Number(d.perdida_kwh) || 0), 0);
+    console.log('[renderAll] totalLoss_kwh:', totalLoss_kwh);
+    const unidadVisual = unit === 'kW' ? 'kWh' : 'MWh';
+    const scaleFactor = unit === 'kW' ? 1 : 1 / 1000;
+    const totalLossDisplay = parseFloat((totalLoss_kwh * scaleFactor).toFixed(2));
+
+    // Dataset con valores convertidos para gráficas/tabla
+    const dataWithInefDisplay = dataWithInef.map(d => ({
+      ...d,
+      perdida: parseFloat((d.perdida_kwh * scaleFactor).toFixed(2)),
+    }));
+    // Mapa type → perdida display para usarlo en la tabla general
+    const perdidaDisplayMap = new Map(
+      dataWithInefDisplay.map(d => [d.type, d.perdida])
+    );
 
     // KPIs
     kpiTotalVal.textContent = totalAnomalies.toLocaleString('es-MX');
     kpiInefVal.textContent = `${fmt(maxInef, 1)}%`;
-    kpiLossVal.textContent = fmt(totalLoss, 2);
-    kpiLossLabel.textContent = `Pérdida mensual (${unit})`;
+    kpiLossVal.textContent = fmt(totalLossDisplay, 2);
+    kpiLossLabel.textContent = `P\u00e9rdida energ\u00e9tica mensual (${unidadVisual})`;
     kpiTypesVal.textContent = data.length;
-    lossUnitBadge.textContent = unit;
-    lossColHeader.textContent = `Pérdida (${unit})`;
+    lossUnitBadge.textContent = unidadVisual;
+    lossColHeader.textContent = `P\u00e9rdida (${unidadVisual})`;
 
     destroyChart(chartCount);
     destroyChart(chartInef);
@@ -257,10 +278,10 @@
     chartCount = buildCountChart('chartCount', data);
 
     // Gráficas 2 y 3 — solo tipos con inefficiency definida
-    chartInef = buildHorizontalStacked('chartInef', dataWithInef, 'ineficiencia_pct', '%');
-    chartLoss = buildHorizontalStacked('chartLoss', dataWithInef, 'perdida', unit);
+    chartInef = buildHorizontalStacked('chartInef', dataWithInefDisplay, 'ineficiencia_pct', '%');
+    chartLoss = buildHorizontalStacked('chartLoss', dataWithInefDisplay, 'perdida', unidadVisual);
 
-    // Table — todos los tipos; inef muestra '—' si no aplica
+    // Table — todos los tipos; inef y pérdida muestran '—' si no aplica
     tableBody.innerHTML = data.map(d => {
       const clr = getAnomalyColor(d.type);
       const hasInef = d.ineficiencia_pct !== null;
@@ -271,7 +292,11 @@
              </div>
              <span>${fmt(d.ineficiencia_pct, 1)}%</span>
            </div>`
-        : `<span style="color:var(--clr-muted)">—</span>`;
+        : `<span style="color:var(--clr-muted)">\u2014</span>`;
+
+      const perdidaVal = perdidaDisplayMap.has(d.type)
+        ? fmt(perdidaDisplayMap.get(d.type), 2)
+        : null;
 
       return `
       <tr>
@@ -282,10 +307,11 @@
         </td>
         <td>${d.recuento.toLocaleString('es-MX')}</td>
         <td>${inefCell}</td>
-        <td>${hasInef ? fmt(d.perdida, 4) : '<span style="color:var(--clr-muted)">—</span>'}</td>
+        <td>${perdidaVal !== null ? perdidaVal : '<span style="color:var(--clr-muted)">\u2014</span>'}</td>
       </tr>`;
     }).join('');
   }
+
 
   // ── Unit switcher ─────────────────────────────────────────
   function setUnit(unit) {
