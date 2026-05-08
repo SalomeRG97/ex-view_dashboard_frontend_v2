@@ -6,6 +6,13 @@
 (() => {
   'use strict';
 
+  // ── Auth Check ─────────────────────────────────────────────
+  // Si no hay sesión, redirigir al login
+  if (sessionStorage.getItem('admin_logged_in') !== 'true') {
+    window.location.replace('login.html');
+    return;
+  }
+
   // ── URL del backend ───────────────────────────────────────
   // Si el frontend se sirve desde el mismo servidor (localhost:3000),
   // dejar vacío ('') para usar rutas relativas.
