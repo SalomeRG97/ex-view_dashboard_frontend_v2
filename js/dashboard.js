@@ -367,12 +367,12 @@
              <div class="inef-bar-bg">
                <div class="inef-bar-fill" style="width:${Math.min(d.ineficiencia_pct, 100)}%;background:${clr}"></div>
              </div>
-             <span>${fmt(d.ineficiencia_pct, 1)}%</span>
+             <span>${fmt(d.ineficiencia_pct, 5)}%</span>
            </div>`
         : `<span style="color:var(--clr-muted)">\u2014</span>`;
 
       const perdidaVal = perdidaDisplayMap.has(d.type)
-        ? fmt(perdidaDisplayMap.get(d.type), 2)
+        ? fmt(perdidaDisplayMap.get(d.type), 3)
         : null;
 
       return `
