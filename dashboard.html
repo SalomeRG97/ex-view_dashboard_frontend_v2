@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/dashboard.css?v=2.2" />
 </head>
 
 <body>
@@ -42,7 +42,7 @@
       </svg>
       <h2 id="errorTitle">Error</h2>
       <p id="errorMessage">No se pudieron cargar los datos.</p>
-      <a href="/dashboard/admin" class="btn-back">← Volver al formulario</a>
+      <a id="btnBackToForm" href="/dashboard/admin" class="btn-back" hidden>← Volver al formulario</a>
     </div>
   </div>
 
@@ -225,7 +225,7 @@
 
   </div><!-- /dashboardApp -->
 
-  <script src="js/dashboard.js"></script>
+  <script src="js/dashboard.js?v=2.2"></script>
 </body>
 
 </html>

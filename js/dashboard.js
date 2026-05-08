@@ -38,6 +38,7 @@
   const tableBody = document.getElementById('tableBody');
   const btnConfigurar = document.getElementById('btnConfigurar');
   const btnCompartir = document.getElementById('btnCompartir');
+  const btnBackToForm = document.getElementById('btnBackToForm');
 
   // Chart instances
   let chartCount = null;
@@ -418,16 +419,19 @@
     fetchAndRender(urlParams);
   }
   // ── Admin mode ─────────────────────────────────────────────
-  const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
+  // Revisamos la variable de sesión segura en lugar de los parámetros de la URL
+  const isAdmin = sessionStorage.getItem('admin_logged_in') === 'true';
 
   if (isAdmin) {
     if (btnConfigurar) btnConfigurar.hidden = false;
     if (btnCompartir) btnCompartir.hidden = false;
+    if (btnBackToForm) btnBackToForm.hidden = false;
   }
 
   // ── Share URL ──────────────────────────────────────────────
   function getShareableURL() {
     const url = new URL(window.location.href);
+    // Ya no es necesario borrar ?admin=true, pero por si acaso viene en alguna URL vieja:
     url.searchParams.delete('admin');
     return url.toString();
   }

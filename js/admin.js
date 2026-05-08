@@ -127,7 +127,6 @@
     });
     if (files_url) params.set('files_url', files_url);
 
-    params.set('admin', 'true'); // Flag to indicate it comes from the form
     window.location.href = `/dashboard/dashboard?${params.toString()}`;
   });
 
