@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EX-VIEW Solar — Dashboards Guardados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css?v=2.5" />
+  <style>
+    .list-container {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: var(--clr-surface);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--clr-border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--clr-border);
+      color: var(--clr-text);
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: var(--clr-surface-2);
+      font-weight: 700;
+      color: var(--clr-muted);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    tr:hover {
+      background: rgba(245, 158, 11, 0.03);
+    }
+
+    .actions-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .actions-col button, .actions-col a {
+      font-family: var(--ff);
+      font-weight: 600;
+      font-size: 0.78rem;
+      padding: 6px 0;
+      width: 115px;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      outline: none;
+    }
+
+    /* 1. Ver */
+    .btn-view {
+      background: #02152a;
+      color: #fff !important;
+    }
+    .btn-view:hover {
+      background: rgba(2, 21, 42, 0.88);
+      transform: translateY(-1px);
+    }
+
+    /* 3. Copiar Link */
+    .btn-copy-link {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.25);
+      color: #065f46 !important;
+    }
+    .btn-copy-link:hover {
+      background: rgba(16, 185, 129, 0.18);
+      transform: translateY(-1px);
+    }
+
+    /* 4. Editar */
+    .btn-edit {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.25);
+      color: #92400e !important;
+    }
+    .btn-edit:hover {
+      background: rgba(245, 158, 11, 0.18);
+      transform: translateY(-1px);
+    }
+
+    /* 5. Informes */
+    .btn-reports {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: rgba(99, 102, 241, 0.25);
+      color: #3730a3 !important;
+    }
+    .btn-reports:hover {
+      background: rgba(99, 102, 241, 0.18);
+      transform: translateY(-1px);
+    }
+
+    /* 6. Eliminar */
+    .btn-delete-action {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #dc2626 !important;
+    }
+    .btn-delete-action:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: #fff !important;
+      transform: translateY(-1px);
+    }
+    
+    .loading-text {
+      text-align: center;
+      padding: 20px;
+      color: var(--clr-muted);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg-grid"></div>
+
+  <main class="page-wrapper list-container">
+
+    <header class="site-header">
+      <img src="media/logo-nav.png" alt="EX-VIEW Solar logo"
+        style="height:75px;width:auto;object-fit:contain;display:block;flex-shrink:0;" />
+      <div>
+        <h1 class="site-title">Dashboards <span>Guardados</span></h1>
+        <p class="site-subtitle">Administración de reportes persistidos</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Listado de Dashboards</h2>
+        <button type="button" class="btn-primary" onclick="window.location.href='admin.html'">+ Nuevo Dashboard</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Installation Name</th>
+            <th>Instalación (asset)</th>
+            <th>Fecha</th>
+            <th style="text-align: center;">Dashboard</th>
+            <th style="text-align: center;">Acciones</th>
+            <th style="text-align: center;">Informes</th>
+          </tr>
+        </thead>
+        <tbody id="dashboards-table-body">
+          <tr><td colspan="6" class="loading-text">Cargando dashboards...</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="error-banner" hidden role="alert" style="margin-top: 20px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      <span id="errorMessage"></span>
+    </div>
+
+  </main>
+
+  <script src="js/list.js?v=1.5"></script>
+</body>
+
+</html>

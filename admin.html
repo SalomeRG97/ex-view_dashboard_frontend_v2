@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="css/admin.css?v=2.3" />
+  <link rel="stylesheet" href="css/admin.css?v=2.5" />
 </head>
 
 <body>
@@ -34,18 +34,19 @@
     <section class="card" aria-labelledby="form-title">
       <div class="card-header">
         <h2 id="form-title">Parámetros del Dashboard</h2>
-        <p>Completa los datos para generar el enlace al dashboard.</p>
+        <p>Completa los datos para guardar y generar el enlace al dashboard.</p>
+        <button type="button" class="btn-secondary" style="margin-top: 10px;" onclick="window.location.href='list.html'">Ver dashboards guardados</button>
       </div>
 
       <form id="dashboardForm" class="form" novalidate>
 
-        <!-- Asset con autocomplete -->
+        <!-- Installation name (autocomplete desde asset_name) -->
         <div class="form-group autocomplete-wrap">
-          <label for="installation">Nombre de instalación <span class="required">*</span></label>
+          <label for="installation">Installation name <span class="required">*</span></label>
           <input id="installation" name="installation" type="text" placeholder="Ej: Planta Solar Norte"
             autocomplete="off" required />
           <ul id="assetDropdown" class="autocomplete-list" hidden></ul>
-          <span class="hint">Escribe para buscar instalaciones en la base de datos.</span>
+          <span class="hint">Escribe para buscar instalaciones en la base de datos (asset_name).</span>
         </div>
 
         <!-- 1. Total de paneles -->
@@ -94,8 +95,26 @@
           <span class="hint">Enlace a imágenes o reportes de la inspección.</span>
         </div>
 
+        <!-- PDF Upload opcional (Switch) -->
+        <div class="form-group" style="border-top:1px solid var(--clr-border);padding-top:1.1rem;margin-top:.25rem;">
+          <div class="toggle-group">
+            <label>¿Subir informe PDF?</label>
+            <div class="toggle-pill" role="group" aria-label="¿Subir informe PDF?">
+              <button type="button" id="togglePdfNo" class="active" aria-pressed="true">No</button>
+              <button type="button" id="togglePdfYes" aria-pressed="false">Sí</button>
+            </div>
+          </div>
+        </div>
+        <!-- Campo PDF (condicional) -->
+        <div id="pdfUploadGroup" class="form-group modulos-field hidden-field">
+          <label for="pdfFile">Informe PDF <span class="required">*</span></label>
+          <input id="pdfFile" name="pdfFile" type="file" accept="application/pdf"
+            style="font-size:.85rem;padding:.5rem .9rem;border:1px solid var(--clr-border);border-radius:var(--radius-sm);background:var(--clr-surface);"/>
+          <span class="hint">Máximo 50 MB. El PDF se procesará automáticamente para extraer anomalías.</span>
+        </div>
+
         <button type="submit" id="submitBtn" class="btn-primary">
-          <span class="btn-text">Ver Dashboard</span>
+          <span class="btn-text">Guardar y Ver Dashboard</span>
         </button>
       </form>
     </section>
@@ -112,7 +131,7 @@
 
   </main>
 
-  <script src="js/admin.js?v=2.3"></script>
+  <script src="js/admin.js?v=2.5"></script>
 </body>
 
 </html>

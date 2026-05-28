@@ -8,13 +8,13 @@
 
   // Si ya está logueado, redirigir al admin
   if (sessionStorage.getItem('admin_logged_in') === 'true') {
-    window.location.replace('/dashboard/admin');
+    window.location.replace('admin.html');
     return;
   }
 
   // ── URL del backend ───────────────────────────────────────
-  // const API_BASE = 'http://localhost:3000';
-  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'http://localhost:3000';
+  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   const form = document.getElementById('loginForm');
   const errorBanner = document.getElementById('errorBanner');
@@ -46,7 +46,7 @@
 
       if (res.ok && data.success) {
         sessionStorage.setItem('admin_logged_in', 'true');
-        window.location.replace('/dashboard/admin');
+        window.location.replace('admin.html');
       } else {
         errorMessage.textContent = data.error || 'Credenciales incorrectas.';
         errorBanner.hidden = false;

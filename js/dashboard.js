@@ -10,8 +10,8 @@
   // Si el frontend se sirve desde el mismo servidor (localhost:3000),
   // dejar vacío ('') para usar rutas relativas.
   // Si el frontend corre en otro puerto o dominio, poner la URL completa:
-  // const API_BASE = 'http://localhost:3000';
-  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'http://localhost:3000';
+  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ──────────────────────────────────────────────
   const loadingScreen = document.getElementById('loadingScreen');
@@ -23,6 +23,7 @@
   const assetNameEl = document.getElementById('assetName');
   const lastUpdatedEl = document.getElementById('lastUpdated');
   const filesBtn = document.getElementById('filesBtn');
+  const dashboardReportsBtn = document.getElementById('dashboardReportsBtn');
 
   const kpiTotalVal = document.getElementById('kpiTotalVal');
   const kpiInefVal = document.getElementById('kpiInefVal');
@@ -54,6 +55,7 @@
   function getParams() {
     const p = new URLSearchParams(window.location.search);
     return {
+      id: p.get('id') || '',
       installation: p.get('installation') || '',
       total_paneles: p.get('total_paneles') || '',
       modulos_desconectados: p.get('modulos_desconectados') || '',
@@ -98,6 +100,7 @@
     'soiling': '#834109',
     'vegetation': '#06fd07',
     'shading': '#05fdf6',
+    'shadow': '#05fdf6',
   };
 
   // ── Mapa de nombres visibles ────────────────────────────
@@ -106,6 +109,7 @@
     dba: 'DBA',
     hotspot_mild: 'PC Leve',
     shading: 'Sombras',
+    shadow: 'Sombras',
     hotspot_permissible: 'PC Permisible',
     dirt: 'Suciedad',
     vegetation: 'Vegetación',
@@ -358,6 +362,11 @@
       chartLoss = buildHorizontalStacked('chartLoss', dataWithInefDisplay, 'perdida', unidadVisual);
     }
 
+    const chartInefCard = document.getElementById('chartInefCard');
+    const chartLossCard = document.getElementById('chartLossCard');
+    if (chartInefCard) chartInefCard.hidden = (maxInef === 0);
+    if (chartLossCard) chartLossCard.hidden = (maxInef === 0);
+
     // Table — todos los tipos; inef y pérdida muestran '—' si no aplica
     tableBody.innerHTML = data.map(d => {
       const clr = getAnomalyColor(d.type);
@@ -367,7 +376,7 @@
              <div class="inef-bar-bg">
                <div class="inef-bar-fill" style="width:${Math.min(d.ineficiencia_pct, 100)}%;background:${clr}"></div>
              </div>
-             <span>${fmt(d.ineficiencia_pct, 5)}%</span>
+             <span>${fmt(d.ineficiencia_pct, 4)}%</span>
            </div>`
         : `<span style="color:var(--clr-muted)">\u2014</span>`;
 
@@ -446,6 +455,29 @@
         filesBtn.hidden = false;
       }
 
+      // Reports button
+      if (params.id) {
+        try {
+          const repRes = await fetch(`${API_BASE}/api/admin/dashboards/${params.id}/reports`);
+          if (repRes.ok) {
+            const reports = await repRes.json();
+            if (reports && reports.length > 0) {
+              dashboardReportsBtn.href = `reports.html?dashboardId=${params.id}&dashboardName=${encodeURIComponent(installation || params.installation || '')}`;
+              dashboardReportsBtn.hidden = false;
+            } else {
+              dashboardReportsBtn.hidden = true;
+            }
+          } else {
+            dashboardReportsBtn.hidden = true;
+          }
+        } catch (repErr) {
+          console.error('[dashboard] Error fetching dashboard reports:', repErr);
+          dashboardReportsBtn.hidden = true;
+        }
+      } else {
+        dashboardReportsBtn.hidden = true;
+      }
+
       if (!data.length) {
         showDashboard();
         kpiTotalVal.textContent = '0';
@@ -500,6 +532,13 @@
   const isAdmin = sessionStorage.getItem('admin_logged_in') === 'true';
 
   if (isAdmin) {
+    if (urlParams.id) {
+      if (btnConfigurar) btnConfigurar.href = `admin.html?editId=${urlParams.id}`;
+      if (btnBackToForm) btnBackToForm.href = `admin.html?editId=${urlParams.id}`;
+    } else {
+      if (btnConfigurar) btnConfigurar.href = `admin.html`;
+      if (btnBackToForm) btnBackToForm.href = `admin.html`;
+    }
     if (btnConfigurar) btnConfigurar.hidden = false;
     if (btnCompartir) btnCompartir.hidden = false;
     if (btnBackToForm) btnBackToForm.hidden = false;

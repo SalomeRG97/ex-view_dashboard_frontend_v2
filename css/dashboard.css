@@ -145,6 +145,17 @@ html, body {
 }
 .btn-files:hover { background: rgba(59,130,246,.14); }
 
+/* Reports button in header */
+.btn-reports-dash {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #b45309; /* Warm brown/amber */
+}
+.btn-reports-dash:hover {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: var(--clr-amber);
+}
+
 /* Settings link (Icon) */
 .btn-icon-header {
   display: inline-flex; align-items: center; justify-content: center;

@@ -1,10 +1,26 @@
 RewriteEngine On
+# Si en Hostinger vas a poner los archivos dentro de la carpeta "dashboard",
+# la base de reescritura debe ser esa:
+RewriteBase /dashboard/
 
-# Si entra a /dashboard/ sin nada más, redirigir a /dashboard/login
+# 1. Si entra a ex-view.com/dashboard/ sin archivo, redirigir a ex-view.com/dashboard/login
 RewriteRule ^$ login [R=301,L]
 
-# Redirigir a .html si el archivo existe
+# 2. Si alguien teclea o hay un enlace hacia .html (ej: ex-view.com/dashboard/login.html),
+# lo redirigimos forzosamente a la versión limpia (ex-view.com/dashboard/login)
+# La condición REDIRECT_STATUS asegura que no hagamos bucles infinitos en redirecciones internas
+RewriteCond %{ENV:REDIRECT_STATUS} ^$
+RewriteRule ^(.+)\.html$ $1 [R=301,L]
+
+# 3. Cuando el usuario pide /dashboard/login, buscamos si existe login.html
+# y lo servimos de fondo (sin cambiar la URL)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}.html -f
 RewriteRule ^(.*)$ $1.html [L,QSA]
+
+# (Opcional) Proteger el acceso a .htaccess
+<Files .htaccess>
+    Order allow,deny
+    Deny from all
+</Files>
