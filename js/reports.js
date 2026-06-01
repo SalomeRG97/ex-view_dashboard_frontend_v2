@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  // const API_BASE = 'http://localhost:3000';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
   const isAdmin  = sessionStorage.getItem('admin_logged_in') === 'true';
 
   // Leer dashboardId e reportId de la URL
@@ -339,7 +339,7 @@
       <div class="form-group" style="margin-bottom:.8rem;">
         <label for="pdfFileInput">Seleccionar PDF</label>
         <input type="file" id="pdfFileInput" accept="application/pdf"/>
-        <span class="hint">Máximo 150 MB. Solo archivos .pdf</span>
+        <span class="hint">Máximo 500 MB. Solo archivos .pdf</span>
       </div>
       <div class="action-row">
         <button class="btn-primary" id="uploadBtn">Subir PDF</button>

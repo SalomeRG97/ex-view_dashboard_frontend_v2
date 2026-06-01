@@ -10,8 +10,8 @@
   // Si el frontend se sirve desde el mismo servidor (localhost:3000),
   // dejar vacío ('') para usar rutas relativas.
   // Si el frontend corre en otro puerto o dominio, poner la URL completa:
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  // const API_BASE = 'http://localhost:3000';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ──────────────────────────────────────────────
   const loadingScreen = document.getElementById('loadingScreen');
@@ -227,7 +227,7 @@
             ...LIGHT_TOOLTIP,
             callbacks: {
               title: () => '',
-              label: c => ` ${c.dataset.label}: ${fmt(c.parsed.x, 2)}${unit ? ' ' + unit : ''}`,
+              label: c => ` ${c.dataset.label}: ${fmt(c.parsed.x, 5)}${unit ? ' ' + unit : ''}`,
             },
           },
           datalabels: {
@@ -236,13 +236,13 @@
             anchor: 'center',
             align: 'center',
             offset: 0,
-            formatter: v => v > 0 ? fmt(v, 2) : '',
+            formatter: v => v > 0 ? fmt(v, 5) : '',
           },
         },
         scales: {
           x: {
             ...LIGHT_AXIS, stacked: true, beginAtZero: true,
-            ticks: { ...LIGHT_AXIS.ticks, callback: v => unit ? `${fmt(v, 1)} ${unit}` : v }
+            ticks: { ...LIGHT_AXIS.ticks, callback: v => unit ? `${fmt(v, 5)} ${unit}` : v }
           },
           y: { stacked: true, grid: { display: false }, ticks: { display: false }, border: { display: false } },
         },
@@ -277,7 +277,7 @@
           tooltip: {
             ...LIGHT_TOOLTIP,
             callbacks: {
-              label: c => ` ${c.label}: ${fmt(c.parsed.x, 2)}${unit ? ' ' + unit : ''}`,
+              label: c => ` ${c.label}: ${fmt(c.parsed.x, 5)}${unit ? ' ' + unit : ''}`,
             },
           },
           datalabels: {
@@ -286,13 +286,13 @@
             anchor: 'end',
             align: 'right',
             offset: 4,
-            formatter: v => v > 0 ? fmt(v, 2) : '',
+            formatter: v => v > 0 ? fmt(v, 5) : '',
           },
         },
         scales: {
           x: {
             ...LIGHT_AXIS, beginAtZero: true,
-            ticks: { ...LIGHT_AXIS.ticks, callback: v => unit ? `${fmt(v, 1)} ${unit}` : v },
+            ticks: { ...LIGHT_AXIS.ticks, callback: v => unit ? `${fmt(v, 5)} ${unit}` : v },
           },
           y: { ...LIGHT_AXIS, grid: { display: false } },
         },
@@ -323,12 +323,12 @@
     console.log('[renderAll] totalLoss_kwh:', totalLoss_kwh);
     const unidadVisual = unit === 'kW' ? 'kWh' : 'MWh';
     const scaleFactor = unit === 'kW' ? 1 : 1 / 1000;
-    const totalLossDisplay = parseFloat((totalLoss_kwh * scaleFactor).toFixed(2));
+    const totalLossDisplay = parseFloat((totalLoss_kwh * scaleFactor).toFixed(5));
 
     // Dataset con valores convertidos para gráficas/tabla
     const dataWithInefDisplay = dataWithInef.map(d => ({
       ...d,
-      perdida: parseFloat((d.perdida_kwh * scaleFactor).toFixed(2)),
+      perdida: parseFloat((d.perdida_kwh * scaleFactor).toFixed(5)),
     }));
     // Mapa type → perdida display para usarlo en la tabla general
     const perdidaDisplayMap = new Map(

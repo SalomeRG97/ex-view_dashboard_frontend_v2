@@ -16,8 +16,8 @@
   // ── URL del backend ───────────────────────────────────────
   // Para pruebas locales apuntamos al servidor local.
   // En producción cambiar a la URL de Render u otro hosting.
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  // const API_BASE = 'http://localhost:3000';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ─────────────────────────────────────────────
   const form = document.getElementById('dashboardForm');
