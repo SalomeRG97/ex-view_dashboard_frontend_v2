@@ -10,8 +10,8 @@
   // Si el frontend se sirve desde el mismo servidor (localhost:3000),
   // dejar vacío ('') para usar rutas relativas.
   // Si el frontend corre en otro puerto o dominio, poner la URL completa:
-  // const API_BASE = 'http://localhost:3000';
-  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'http://localhost:3000';
+  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ──────────────────────────────────────────────
   const loadingScreen = document.getElementById('loadingScreen');
@@ -91,16 +91,20 @@
     'hotspot_mild': '#fef80b',
     'hotspot_permissible': '#fe8201',
     'hotspot_critical': '#f50202',
-    'disconnected_string': '#020202',
-    'bypass_diode_failure': '#ff69b4',
+    'string_failure': '#020202',
+    'disconnected_string': '#020202', // keep for retro-compatibility
+    'diode_failure': '#ff69b4',
+    'bypass_diode_failure': '#ff69b4', // keep for retro-compatibility
     'pid': '#7f01fe',
     'reverse_polarity': '#cc00cc',
     'dirt': '#834109',
-    'physical_damage': '#9e9e9e',
+    'broken_glass_hotspot': '#9e9e9e',
+    'physical_damage': '#9e9e9e', // keep for retro-compatibility
     'soiling': '#834109',
     'vegetation': '#06fd07',
     'shading': '#05fdf6',
     'shadow': '#05fdf6',
+    'other': '#64748b',
   };
 
   // ── Mapa de nombres visibles ────────────────────────────

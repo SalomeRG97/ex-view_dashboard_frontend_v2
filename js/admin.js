@@ -16,8 +16,8 @@
   // ── URL del backend ───────────────────────────────────────
   // Para pruebas locales apuntamos al servidor local.
   // En producción cambiar a la URL de Render u otro hosting.
-  // const API_BASE = 'http://localhost:3000';
-  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'http://localhost:3000';
+  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ─────────────────────────────────────────────
   const form = document.getElementById('dashboardForm');
@@ -245,6 +245,8 @@
       formData: formDataObj
     };
 
+    // ── Paso 1: Guardar dashboard ──────────────────────────
+    let savedDashboard;
     try {
       const method = editId ? 'PUT' : 'POST';
       const endpoint = editId ? `${API_BASE}/api/admin/dashboards/${editId}` : `${API_BASE}/api/admin/dashboards`;
@@ -256,14 +258,29 @@
       });
 
       if (!response.ok) {
-        throw new Error('Error al guardar el dashboard en la base de datos.');
+        const errBody = await response.text();
+        throw new Error(`Error al guardar el dashboard: ${errBody || response.statusText}`);
       }
 
-      const savedDashboard = await response.json();
+      savedDashboard = await response.json();
+    } catch (err) {
+      console.error('[admin.js] Error guardando dashboard:', err);
+      showError(err.message === 'Failed to fetch'
+        ? 'No se pudo conectar con el servidor. Verifica tu conexión o intenta de nuevo en unos segundos.'
+        : err.message);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+      return;
+    }
 
-      // ── Upload PDF si el switch está activado ────────────
-      if (uploadPdf && pdfFileInput.files[0]) {
-        submitBtn.innerHTML = 'Subiendo PDF...';
+    // ── Paso 2: Upload PDF si el switch está activado ─────
+    let pdfUploadOk = true;
+    let pdfUploadError = '';
+    if (uploadPdf && pdfFileInput.files[0]) {
+      const fileSizeMB = (pdfFileInput.files[0].size / (1024 * 1024)).toFixed(1);
+      submitBtn.innerHTML = `Subiendo PDF (${fileSizeMB} MB)...`;
+
+      try {
         const pdfForm = new FormData();
         pdfForm.append('pdf', pdfFileInput.files[0]);
 
@@ -273,27 +290,44 @@
         });
 
         if (!pdfRes.ok) {
-          // No es un error fatal: el dashboard ya se guardó
-          console.warn('[admin.js] PDF subido con advertencia:', await pdfRes.text());
+          const errText = await pdfRes.text();
+          let errMsg;
+          try { errMsg = JSON.parse(errText).error; } catch (_) { errMsg = errText; }
+          pdfUploadOk = false;
+          pdfUploadError = errMsg || `Error HTTP ${pdfRes.status}`;
+          console.warn('[admin.js] PDF upload error:', pdfUploadError);
         }
+      } catch (pdfErr) {
+        pdfUploadOk = false;
+        pdfUploadError = pdfErr.message === 'Failed to fetch'
+          ? `No se pudo subir el PDF (${fileSizeMB} MB). El archivo puede ser demasiado grande o la conexión se interrumpió. Intenta subirlo desde la página de Reportes.`
+          : pdfErr.message;
+        console.error('[admin.js] PDF upload exception:', pdfErr);
       }
+    }
 
-      // Build URL params para redirigir
-      const params = new URLSearchParams({
-        id: savedDashboard.id,
-        installation,
-        total_paneles,
-        modulos_desconectados,
-        capacidad_instalada_mw: capacidad_kw,
-        unidad,
-      });
-      if (files_url) params.set('files_url', files_url);
+    // ── Paso 3: Redirigir al dashboard ───────────────────
+    const params = new URLSearchParams({
+      id: savedDashboard.id,
+      installation,
+      total_paneles,
+      modulos_desconectados,
+      capacidad_instalada_mw: capacidad_kw,
+      unidad,
+    });
+    if (files_url) params.set('files_url', files_url);
 
-      window.location.href = `dashboard.html?${params.toString()}`;
-    } catch (err) {
-      showError(err.message);
+    if (!pdfUploadOk) {
+      // Dashboard guardado OK, pero PDF falló: informar y redirigir
+      showError(`Dashboard guardado ✅, pero el PDF no se pudo subir: ${pdfUploadError}`);
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalText;
+      // Redirigir después de unos segundos para que el usuario lea el mensaje
+      setTimeout(() => {
+        window.location.href = `dashboard.html?${params.toString()}`;
+      }, 5000);
+    } else {
+      window.location.href = `dashboard.html?${params.toString()}`;
     }
   });
 
