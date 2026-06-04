@@ -6,8 +6,8 @@
     return;
   }
 
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  // const API_BASE = 'http://localhost:3000';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   const tbody = document.getElementById('dashboards-table-body');
   const errorBanner = document.getElementById('errorBanner');
@@ -56,10 +56,13 @@
         }
         
         const absoluteUrl = new URL(dashboardUrl, window.location.origin).href;
+        
+        const name1 = d.installationName || d.formData?.installation || '-';
+        const name2 = d.formData?.installation || '-';
 
         tr.innerHTML = `
-          <td>${d.installationName || d.formData?.installation || '-'}</td>
-          <td>${d.formData?.installation || '-'}</td>
+          <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${name1}">${name1}</td>
+          <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${name2}">${name2}</td>
           <td>${dateStr}</td>
           <td>
             <div class="actions-col">

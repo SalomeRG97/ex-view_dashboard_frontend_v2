@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  // const API_BASE = 'http://localhost:3000';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
   const isAdmin  = sessionStorage.getItem('admin_logged_in') === 'true';
 
   // Leer dashboardId e reportId de la URL
@@ -34,7 +34,7 @@
   // ══════════════════════════════════════════════════════════
   async function loadDashboardReports(dId) {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/dashboards/${dId}/reports`);
+      const res = await fetch(`${API_BASE}/api/admin/dashboards/${dId}/reports`, { cache: 'no-store' });
       if (!res.ok) throw new Error('No se pudieron obtener los reportes.');
       const reports = await res.json();
 
@@ -161,7 +161,7 @@
       <p style="font-size: .78rem; color: var(--clr-muted); margin-bottom: .8rem; line-height: 1.4;">
         Visualiza o descarga el informe original tal como fue cargado inicialmente, sin filtros ni modificaciones de páginas.
       </p>
-      <a href="${API_BASE}/api/reports/${report.id}/original" target="_blank" class="btn-secondary" style="display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .45rem .9rem; margin-bottom: 1rem; text-decoration: none; color: inherit; font-weight: 500; border-radius: 6px;">
+      <a href="${API_BASE}/api/reports/${report.id}/original" download="${report.originalName || 'informe.pdf'}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .45rem .9rem; margin-bottom: 1rem; text-decoration: none; color: inherit; font-weight: 500; border-radius: 6px;">
         ⬇ Descargar Original
       </a>
 
@@ -334,8 +334,8 @@
     }
 
     btn.disabled = true;
-    btn.textContent = 'Subiendo...';
-    feedback.textContent = '';
+    btn.textContent = '⏳ Subiendo al servidor...';
+    feedback.textContent = 'Transfiriendo archivo, esto puede tomar un momento...';
 
     const formData = new FormData();
     formData.append('pdf', fileInput.files[0]);
@@ -349,13 +349,49 @@
         const err = await res.json();
         throw new Error(err.error || 'Error al subir el PDF');
       }
-      feedback.textContent = '✅ PDF subido. El procesamiento comenzará en segundos. Recarga para ver el estado.';
-      btn.textContent = '✅ Subido';
-      setTimeout(() => location.reload(), 3000);
+      
+      const newReport = await res.json();
+      
+      feedback.textContent = '✅ Subida exitosa. Analizando anomalías...';
+      btn.textContent = '⚙️ Procesando...';
+
+      // Polling cada 1 segundo para verificar el estado
+      const pollInterval = setInterval(async () => {
+        try {
+          // Usamos cache: 'no-store' para que el navegador NO guarde la respuesta antigua
+          const checkRes = await fetch(`${API_BASE}/api/admin/dashboards/${dId}/reports`, { cache: 'no-store' });
+          if (checkRes.ok) {
+            const reports = await checkRes.json();
+            const currentReport = reports.find(r => r.id === newReport.id);
+            
+            if (currentReport && currentReport.status === 'READY') {
+              clearInterval(pollInterval);
+              feedback.textContent = '🎉 ¡Análisis completo!';
+              btn.textContent = '✅ ¡Listo!';
+              
+              // Recargar los reportes suavemente (sin refrescar el navegador)
+              setTimeout(() => {
+                loadDashboardReports(dId);
+              }, 1000);
+              
+            } else if (currentReport && currentReport.status === 'FAILED') {
+              clearInterval(pollInterval);
+              showError('El procesamiento del documento falló.');
+              btn.disabled = false;
+              btn.textContent = 'Subir PDF';
+              feedback.textContent = '';
+            }
+          }
+        } catch (e) {
+          console.error('Error polling status', e);
+        }
+      }, 1000);
+
     } catch (err) {
       showError(err.message);
       btn.disabled = false;
       btn.textContent = 'Subir PDF';
+      feedback.textContent = '';
     }
   }
 
