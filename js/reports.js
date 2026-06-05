@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  // const API_BASE = 'http://localhost:3000';
-  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'http://localhost:3000';
+  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
   const isAdmin  = sessionStorage.getItem('admin_logged_in') === 'true';
 
   // Leer dashboardId e reportId de la URL
@@ -161,13 +161,18 @@
       <p style="font-size: .78rem; color: var(--clr-muted); margin-bottom: .8rem; line-height: 1.4;">
         Visualiza o descarga el informe original tal como fue cargado inicialmente, sin filtros ni modificaciones de páginas.
       </p>
-      <a href="${API_BASE}/api/reports/${report.id}/original" download="${report.originalName || 'informe.pdf'}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .45rem .9rem; margin-bottom: 1rem; text-decoration: none; color: inherit; font-weight: 500; border-radius: 6px;">
-        ⬇ Descargar Original
-      </a>
+      <div style="display: flex; gap: .5rem; margin-bottom: 1rem;">
+        <a href="${API_BASE}/api/reports/${report.id}/original" download="${report.originalName || 'informe.pdf'}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .45rem .9rem; text-decoration: none; color: inherit; font-weight: 500; border-radius: 6px;">
+          ⬇ Descargar Original
+        </a>
+        <button class="btn-secondary" onclick="document.getElementById('pdf-iframe-${report.id}').requestFullscreen()" style="display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .45rem .9rem; font-weight: 500; border-radius: 6px;">
+          ⛶ Pantalla Completa
+        </button>
+      </div>
 
       <!-- VISOR DE PDF NATIVO EN IFRAME -->
       <div class="pdf-viewer-container" style="border: 1px solid var(--clr-border); border-radius: 8px; overflow: hidden; margin-bottom: 1rem; background: var(--clr-surface-2); height: 750px;">
-        <iframe src="${API_BASE}/api/reports/${report.id}/original?inline=true" style="width: 100%; height: 100%; border: none;" allow="fullscreen"></iframe>
+        <iframe id="pdf-iframe-${report.id}" src="${API_BASE}/api/reports/${report.id}/original?inline=true" style="width: 100%; height: 100%; border: none;" allow="fullscreen"></iframe>
       </div>
     `;
 
@@ -188,7 +193,8 @@
     customDesc.style.color = 'var(--clr-muted)';
     customDesc.style.marginBottom = '.9rem';
     customDesc.style.lineHeight = '1.4';
-    customDesc.innerHTML = 'Selecciona las anomalías que deseas incluir en el nuevo reporte. El documento se generará dinámicamente con una tabla de contenido limpia y numeración corregida.';
+    customDesc.innerHTML = 'Selecciona las anomalías que deseas incluir en el nuevo reporte. El documento se generará dinámicamente con una tabla de contenido limpia y numeración corregida.' +
+      '<br><br><b>⚠️ Nota importante: Les recordamos que el informe que se entrega es completo en su versión base. La plataforma permite aplicar filtros para ajustarlo a las necesidades específicas de cada usuario. Queremos subrayar que cualquier ajuste o filtrado que se aplique es responsabilidad de ustedes. Les recomendamos verificar que no se omitan datos clave, de cara al análisis final del cliente. Muchas gracias por su atención.</b>';
 
     container.appendChild(customTitle);
     container.appendChild(customDesc);
