@@ -7,11 +7,7 @@
   'use strict';
 
   // ── URL del backend ───────────────────────────────────────
-  // Si el frontend se sirve desde el mismo servidor (localhost:3000),
-  // dejar vacío ('') para usar rutas relativas.
-  // Si el frontend corre en otro puerto o dominio, poner la URL completa:
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ──────────────────────────────────────────────
   const loadingScreen = document.getElementById('loadingScreen');
@@ -120,7 +116,7 @@
     soiling: 'Soiling',
     pid: 'PID',
     diode_failure: 'Falla en diodo',
-    string_failure: 'String desconectado',
+    string_failure: 'Módulos desconectados',
     other: 'Otros',
     broken_glass_hotspot: 'Daño físico',
     reverse_polarity: 'Polaridad inversa',
@@ -313,7 +309,7 @@
     // Solo tipos con inefficiency (para gráficas 2 y 3)
     // Nota: usa != null (no !==) para capturar tanto null como undefined
     // (el backend antiguo devuelve `perdida`, el nuevo devuelve `perdida_kwh`)
-    const dataWithInef = data.filter(d => d.ineficiencia_pct != null && d.perdida_kwh != null);
+    const dataWithInef = data.filter(d => d.ineficiencia_pct != null && d.perdida_kwh != null && Number(d.ineficiencia_pct) > 0);
     console.log('[renderAll] sample row keys:', data[0] ? Object.keys(data[0]) : '(sin datos)');
     console.log('[renderAll] dataWithInef.length:', dataWithInef.length);
     const maxInef = dataWithInef.length
@@ -371,22 +367,15 @@
     if (chartInefCard) chartInefCard.hidden = (maxInef === 0);
     if (chartLossCard) chartLossCard.hidden = (maxInef === 0);
 
-    // Table — todos los tipos; inef y pérdida muestran '—' si no aplica
-    tableBody.innerHTML = data.map(d => {
+    // Table — solo tipos con ineficiencia definida (> 0)
+    tableBody.innerHTML = dataWithInefDisplay.map(d => {
       const clr = getAnomalyColor(d.type);
-      const hasInef = d.ineficiencia_pct !== null;
-      const inefCell = hasInef
-        ? `<div class="inef-bar-wrap">
+      const inefCell = `<div class="inef-bar-wrap">
              <div class="inef-bar-bg">
                <div class="inef-bar-fill" style="width:${Math.min(d.ineficiencia_pct, 100)}%;background:${clr}"></div>
              </div>
              <span>${fmt(d.ineficiencia_pct, 4)}%</span>
-           </div>`
-        : `<span style="color:var(--clr-muted)">\u2014</span>`;
-
-      const perdidaVal = perdidaDisplayMap.has(d.type)
-        ? fmt(perdidaDisplayMap.get(d.type), 3)
-        : null;
+           </div>`;
 
       return `
       <tr>
@@ -397,7 +386,7 @@
         </td>
         <td>${d.recuento.toLocaleString('es-MX')}</td>
         <td>${inefCell}</td>
-        <td>${perdidaVal !== null ? perdidaVal : '<span style="color:var(--clr-muted)">\u2014</span>'}</td>
+        <td>${fmt(d.perdida, 3)}</td>
       </tr>`;
     }).join('');
   }

@@ -6,8 +6,7 @@
     return;
   }
 
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   const tbody = document.getElementById('dashboards-table-body');
   const errorBanner = document.getElementById('errorBanner');

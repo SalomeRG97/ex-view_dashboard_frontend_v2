@@ -14,10 +14,7 @@
   }
 
   // ── URL del backend ───────────────────────────────────────
-  // Para pruebas locales apuntamos al servidor local.
-  // En producción cambiar a la URL de Render u otro hosting.
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
 
   // ── DOM refs ─────────────────────────────────────────────
   const form = document.getElementById('dashboardForm');
@@ -26,7 +23,7 @@
   const errorBanner = document.getElementById('errorBanner');
   const errorMessage = document.getElementById('errorMessage');
 
-  // ── Toggle: ¿Strings desconectados? ────────────────────
+  // ── Toggle: ¿Módulos desconectados? ────────────────────
   const toggleNo = document.getElementById('toggleStringNo');
   const toggleYes = document.getElementById('toggleStringYes');
   const modulosGroup = document.getElementById('modulosGroup');
@@ -213,7 +210,7 @@
     if (!total_paneles || Number(total_paneles) <= 0)
       errors.push('Total de paneles debe ser un número positivo.');
     if (hasStringFailure && (!modulos_desconectados || Number(modulos_desconectados) <= 0))
-      errors.push('Módulos string desconectados debe ser un número positivo.');
+      errors.push('Módulos desconectados debe ser un número positivo.');
     if (!capacidad_raw || Number(capacidad_raw) <= 0)
       errors.push('Capacidad instalada debe ser un número positivo.');
     if (!Number.isFinite(capacidad_kw) || capacidad_kw <= 0)
@@ -273,36 +270,18 @@
       return;
     }
 
-    // ── Paso 2: Upload PDF si el switch está activado ─────
+    // ── Paso 2: Upload PDF si el switch está activado ─────────────────
     let pdfUploadOk = true;
     let pdfUploadError = '';
     if (uploadPdf && pdfFileInput.files[0]) {
-      const fileSizeMB = (pdfFileInput.files[0].size / (1024 * 1024)).toFixed(1);
-      submitBtn.innerHTML = `Subiendo PDF (${fileSizeMB} MB)...`;
-
       try {
-        const pdfForm = new FormData();
-        pdfForm.append('pdf', pdfFileInput.files[0]);
-
-        const pdfRes = await fetch(`${API_BASE}/api/admin/dashboards/${savedDashboard.id}/reports`, {
-          method: 'POST',
-          body: pdfForm,
-        });
-
-        if (!pdfRes.ok) {
-          const errText = await pdfRes.text();
-          let errMsg;
-          try { errMsg = JSON.parse(errText).error; } catch (_) { errMsg = errText; }
-          pdfUploadOk = false;
-          pdfUploadError = errMsg || `Error HTTP ${pdfRes.status}`;
-          console.warn('[admin.js] PDF upload error:', pdfUploadError);
-        }
+        await chunkedUpload(pdfFileInput.files[0], savedDashboard.id, submitBtn);
       } catch (pdfErr) {
         pdfUploadOk = false;
-        pdfUploadError = pdfErr.message === 'Failed to fetch'
-          ? `No se pudo subir el PDF (${fileSizeMB} MB). El archivo puede ser demasiado grande o la conexión se interrumpió. Intenta subirlo desde la página de Reportes.`
-          : pdfErr.message;
-        console.error('[admin.js] PDF upload exception:', pdfErr);
+        pdfUploadError = pdfErr.message || 'Error desconocido al subir el PDF';
+        console.error('[admin.js] PDF chunked upload error:', pdfErr);
+      } finally {
+        hideUploadProgress();
       }
     }
 
@@ -331,7 +310,110 @@
     }
   });
 
-  // ── Error helpers ─────────────────────────────────────────
+  // ── Chunked Upload ──────────────────────────────────────────
+  /**
+   * Sube un archivo PDF en fragmentos de CHUNK_SIZE bytes.
+   * Muestra progreso en tiempo real (%, MB, velocidad).
+   * @param {File}   file         - Archivo seleccionado por el usuario
+   * @param {string} dashboardId  - ID del dashboard destino
+   * @param {HTMLElement} btn     - Botón de submit (para actualizar texto)
+   */
+  async function chunkedUpload(file, dashboardId, btn) {
+    const CHUNK_SIZE = 10 * 1024 * 1024; // 10 MB por chunk
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const totalMB = (file.size / (1024 * 1024)).toFixed(1);
+
+    // ─ 1. Iniciar sesión de upload ───────────────────────────────
+    btn.innerHTML = `Iniciando subida (${totalMB} MB)...`;
+    const initRes = await fetch(
+      `${API_BASE}/api/admin/dashboards/${dashboardId}/reports/chunks`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, totalChunks }),
+      }
+    );
+    if (!initRes.ok) {
+      const body = await initRes.text();
+      throw new Error(`Error al iniciar upload: ${body || initRes.statusText}`);
+    }
+    const { uploadId } = await initRes.json();
+
+    // ─ 2. Mostrar barra de progreso ────────────────────────────
+    showUploadProgress();
+    const startTime = Date.now();
+    let uploadedBytes = 0;
+
+    // ─ 3. Subir chunks secuencialmente ─────────────────────────
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end   = Math.min(start + CHUNK_SIZE, file.size);
+      const blob  = file.slice(start, end);
+
+      const formData = new FormData();
+      formData.append('chunk', blob, `chunk-${i}.bin`);
+
+      const chunkRes = await fetch(
+        `${API_BASE}/api/admin/dashboards/${dashboardId}/reports/chunks/${uploadId}/${i}`,
+        { method: 'PUT', body: formData }
+      );
+
+      if (!chunkRes.ok) {
+        const body = await chunkRes.text();
+        throw new Error(`Error en chunk ${i}: ${body || chunkRes.statusText}`);
+      }
+
+      // Actualizar progreso
+      uploadedBytes += (end - start);
+      const pct = Math.round((uploadedBytes / file.size) * 100);
+      const elapsedSec = (Date.now() - startTime) / 1000;
+      const speedMBps = elapsedSec > 0 ? ((uploadedBytes / (1024 * 1024)) / elapsedSec).toFixed(1) : '...';
+      const uploadedMB = (uploadedBytes / (1024 * 1024)).toFixed(1);
+
+      updateUploadProgress(pct, uploadedMB, totalMB, speedMBps);
+      btn.innerHTML = `Subiendo PDF ${pct}%...`;
+    }
+
+    // ─ 4. Completar (ensamblar en el servidor) ────────────────────
+    btn.innerHTML = 'Ensamblando PDF...';
+    updateUploadProgress(100, totalMB, totalMB, '—');
+    setUploadLabel('Ensamblando en el servidor...');
+
+    const completeRes = await fetch(
+      `${API_BASE}/api/admin/dashboards/${dashboardId}/reports/chunks/${uploadId}/complete`,
+      { method: 'POST' }
+    );
+    if (!completeRes.ok) {
+      const body = await completeRes.text();
+      throw new Error(`Error al ensamblar el PDF: ${body || completeRes.statusText}`);
+    }
+
+    console.log('[admin.js] Chunked upload completado exitosamente.');
+  }
+
+  // ── Progress UI helpers ───────────────────────────────────────
+  function showUploadProgress() {
+    document.getElementById('uploadProgressWrap').style.display = 'block';
+  }
+  function hideUploadProgress() {
+    document.getElementById('uploadProgressWrap').style.display = 'none';
+    updateUploadProgress(0, '0', '0', '');
+  }
+  function setUploadLabel(text) {
+    document.getElementById('uploadProgressLabel').textContent = text;
+  }
+  function updateUploadProgress(pct, uploadedMB, totalMB, speedMBps) {
+    document.getElementById('uploadProgressBar').style.width  = pct + '%';
+    document.getElementById('uploadProgressPct').textContent  = pct + '%';
+    document.getElementById('uploadProgressBytes').textContent = `${uploadedMB} MB / ${totalMB} MB`;
+    if (speedMBps && speedMBps !== '—') {
+      document.getElementById('uploadProgressSpeed').textContent = `${speedMBps} MB/s`;
+    } else if (speedMBps === '—') {
+      document.getElementById('uploadProgressSpeed').textContent = '';
+    }
+  }
+
+  // ── Error helpers ──────────────────────────────────────────
   function showError(msg) {
     errorMessage.textContent = msg;
     errorBanner.hidden = false;
@@ -343,7 +425,7 @@
     errorMessage.textContent = '';
   }
 
-  // ── Utility ───────────────────────────────────────────────
+  // ── Utility ──────────────────────────────────────────────────
   function escHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }

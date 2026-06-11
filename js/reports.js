@@ -1,8 +1,7 @@
 (() => {
   'use strict';
 
-  const API_BASE = 'http://localhost:3000';
-  // const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
+  const API_BASE = 'https://ex-view-dashboard-backend-v2.onrender.com';
   const isAdmin  = sessionStorage.getItem('admin_logged_in') === 'true';
 
   // Leer dashboardId e reportId de la URL
@@ -165,9 +164,9 @@
         <a href="${API_BASE}/api/reports/${report.id}/original" download="${report.originalName || 'informe.pdf'}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .45rem .9rem; text-decoration: none; color: inherit; font-weight: 500; border-radius: 6px;">
           ⬇ Descargar Original
         </a>
-        <button class="btn-secondary" onclick="document.getElementById('pdf-iframe-${report.id}').requestFullscreen()" style="display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .45rem .9rem; font-weight: 500; border-radius: 6px;">
+        <!-- <button class="btn-secondary" onclick="document.getElementById('pdf-iframe-${report.id}').requestFullscreen()" style="display: inline-flex; align-items: center; gap: .4rem; font-size: .8rem; padding: .45rem .9rem; font-weight: 500; border-radius: 6px;">
           ⛶ Pantalla Completa
-        </button>
+        </button> -->
       </div>
 
       <!-- VISOR DE PDF NATIVO EN IFRAME -->
@@ -316,7 +315,22 @@
       <div class="form-group" style="margin-bottom:.8rem;">
         <label for="pdfFileInput">Seleccionar PDF</label>
         <input type="file" id="pdfFileInput" accept="application/pdf"/>
-        <span class="hint">Máximo 500 MB. Solo archivos .pdf</span>
+        <span class="hint">Hasta 2 GB. Archivos grandes se suben por fragmentos automáticamente.</span>
+
+        <!-- Barra de progreso (visible solo durante la subida) -->
+        <div id="uploadProgressWrap" style="display:none;margin-top:.85rem;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.35rem;">
+            <span id="uploadProgressLabel" style="font-size:.82rem;font-weight:600;color:var(--clr-text);">Subiendo PDF...</span>
+            <span id="uploadProgressPct" style="font-size:.82rem;color:var(--clr-accent,#6366f1);font-weight:700;">0%</span>
+          </div>
+          <div style="height:8px;background:var(--clr-border,#e2e8f0);border-radius:999px;overflow:hidden;">
+            <div id="uploadProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:999px;transition:width .3s ease;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:.3rem;">
+            <span id="uploadProgressBytes" style="font-size:.76rem;color:var(--clr-muted,#94a3b8);">0 MB / 0 MB</span>
+            <span id="uploadProgressSpeed" style="font-size:.76rem;color:var(--clr-muted,#94a3b8);"></span>
+          </div>
+        </div>
       </div>
       <div class="action-row">
         <button class="btn-primary" id="uploadBtn">Subir PDF</button>
@@ -340,65 +354,157 @@
     }
 
     btn.disabled = true;
-    btn.textContent = '⏳ Subiendo al servidor...';
-    feedback.textContent = 'Transfiriendo archivo, esto puede tomar un momento...';
-
-    const formData = new FormData();
-    formData.append('pdf', fileInput.files[0]);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/dashboards/${dId}/reports`, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Error al subir el PDF');
-      }
-      
-      const newReport = await res.json();
-      
+      await chunkedUpload(fileInput.files[0], dId, btn, section);
+
       feedback.textContent = '✅ Subida exitosa. Analizando anomalías...';
       btn.textContent = '⚙️ Procesando...';
 
-      // Polling cada 1 segundo para verificar el estado
-      const pollInterval = setInterval(async () => {
-        try {
-          // Usamos cache: 'no-store' para que el navegador NO guarde la respuesta antigua
-          const checkRes = await fetch(`${API_BASE}/api/admin/dashboards/${dId}/reports`, { cache: 'no-store' });
-          if (checkRes.ok) {
-            const reports = await checkRes.json();
-            const currentReport = reports.find(r => r.id === newReport.id);
-            
-            if (currentReport && currentReport.status === 'READY') {
-              clearInterval(pollInterval);
-              feedback.textContent = '🎉 ¡Análisis completo!';
-              btn.textContent = '✅ ¡Listo!';
-              
-              // Recargar los reportes suavemente (sin refrescar el navegador)
-              setTimeout(() => {
-                loadDashboardReports(dId);
-              }, 1000);
-              
-            } else if (currentReport && currentReport.status === 'FAILED') {
-              clearInterval(pollInterval);
-              showError('El procesamiento del documento falló.');
-              btn.disabled = false;
-              btn.textContent = 'Subir PDF';
-              feedback.textContent = '';
+      // Obtener el ID del reporte recién creado para hacer polling
+      const checkRes = await fetch(`${API_BASE}/api/admin/dashboards/${dId}/reports`, { cache: 'no-store' });
+      const reports  = await checkRes.json();
+      const newReport = reports.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+
+      if (newReport) {
+        const pollInterval = setInterval(async () => {
+          try {
+            const checkRes2 = await fetch(`${API_BASE}/api/admin/dashboards/${dId}/reports`, { cache: 'no-store' });
+            if (checkRes2.ok) {
+              const updated = await checkRes2.json();
+              const current = updated.find(r => r.id === newReport.id);
+              if (current && current.status === 'READY') {
+                clearInterval(pollInterval);
+                feedback.textContent = '🎉 ¡Análisis completo!';
+                btn.textContent = '✅ ¡Listo!';
+                setTimeout(() => loadDashboardReports(dId), 1000);
+              } else if (current && current.status === 'FAILED') {
+                clearInterval(pollInterval);
+                showError('El procesamiento del documento falló.');
+                btn.disabled = false;
+                btn.textContent = 'Subir PDF';
+                feedback.textContent = '';
+              }
             }
-          }
-        } catch (e) {
-          console.error('Error polling status', e);
-        }
-      }, 1000);
+          } catch (e) { console.error('Error polling status', e); }
+        }, 1000);
+      }
 
     } catch (err) {
       showError(err.message);
       btn.disabled = false;
       btn.textContent = 'Subir PDF';
       feedback.textContent = '';
+    } finally {
+      hideUploadProgress(section);
     }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  CHUNKED UPLOAD
+  // ════════════════════════════════════════════════════════
+  /**
+   * Sube un archivo PDF en fragmentos de 10 MB.
+   * Muestra progreso en tiempo real (%, MB, velocidad).
+   * @param {File}        file      - Archivo seleccionado
+   * @param {string}      dId       - dashboardId destino
+   * @param {HTMLElement} btn       - Botón de subida (para texto de estado)
+   * @param {HTMLElement} container - Contenedor con los elementos de progreso
+   */
+  async function chunkedUpload(file, dId, btn, container) {
+    const CHUNK_SIZE  = 10 * 1024 * 1024; // 10 MB
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const totalMB     = (file.size / (1024 * 1024)).toFixed(1);
+
+    // 1. Iniciar sesión
+    btn.textContent = `Iniciando subida (${totalMB} MB)...`;
+    const initRes = await fetch(
+      `${API_BASE}/api/admin/dashboards/${dId}/reports/chunks`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ fileName: file.name, totalChunks }),
+      }
+    );
+    if (!initRes.ok) {
+      const body = await initRes.text();
+      throw new Error(`Error al iniciar upload: ${body || initRes.statusText}`);
+    }
+    const { uploadId } = await initRes.json();
+
+    // 2. Mostrar barra de progreso
+    showUploadProgress(container);
+    const startTime = Date.now();
+    let uploadedBytes = 0;
+
+    // 3. Subir chunks secuencialmente
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end   = Math.min(start + CHUNK_SIZE, file.size);
+      const blob  = file.slice(start, end);
+
+      const formData = new FormData();
+      formData.append('chunk', blob, `chunk-${i}.bin`);
+
+      const chunkRes = await fetch(
+        `${API_BASE}/api/admin/dashboards/${dId}/reports/chunks/${uploadId}/${i}`,
+        { method: 'PUT', body: formData }
+      );
+      if (!chunkRes.ok) {
+        const body = await chunkRes.text();
+        throw new Error(`Error en chunk ${i}: ${body || chunkRes.statusText}`);
+      }
+
+      uploadedBytes += (end - start);
+      const pct        = Math.round((uploadedBytes / file.size) * 100);
+      const elapsedSec = (Date.now() - startTime) / 1000;
+      const speedMBps  = elapsedSec > 0 ? ((uploadedBytes / (1024 * 1024)) / elapsedSec).toFixed(1) : '...';
+      const uploadedMB = (uploadedBytes / (1024 * 1024)).toFixed(1);
+
+      updateUploadProgress(container, pct, uploadedMB, totalMB, speedMBps);
+      btn.textContent = `Subiendo PDF ${pct}%...`;
+    }
+
+    // 4. Completar (ensamblar)
+    btn.textContent = 'Ensamblando PDF...';
+    updateUploadProgress(container, 100, totalMB, totalMB, '—');
+    setUploadLabel(container, 'Ensamblando en el servidor...');
+
+    const completeRes = await fetch(
+      `${API_BASE}/api/admin/dashboards/${dId}/reports/chunks/${uploadId}/complete`,
+      { method: 'POST' }
+    );
+    if (!completeRes.ok) {
+      const body = await completeRes.text();
+      throw new Error(`Error al ensamblar el PDF: ${body || completeRes.statusText}`);
+    }
+
+    console.log('[reports.js] Chunked upload completado.');
+  }
+
+  // ─ Helpers de progreso ───────────────────────────────────────────
+  function showUploadProgress(container) {
+    const el = container.querySelector('#uploadProgressWrap');
+    if (el) el.style.display = 'block';
+  }
+  function hideUploadProgress(container) {
+    const el = container.querySelector('#uploadProgressWrap');
+    if (el) el.style.display = 'none';
+    updateUploadProgress(container, 0, '0', '0', '');
+  }
+  function setUploadLabel(container, text) {
+    const el = container.querySelector('#uploadProgressLabel');
+    if (el) el.textContent = text;
+  }
+  function updateUploadProgress(container, pct, uploadedMB, totalMB, speedMBps) {
+    const bar   = container.querySelector('#uploadProgressBar');
+    const pctEl = container.querySelector('#uploadProgressPct');
+    const bytes = container.querySelector('#uploadProgressBytes');
+    const speed = container.querySelector('#uploadProgressSpeed');
+    if (bar)   bar.style.width        = pct + '%';
+    if (pctEl) pctEl.textContent      = pct + '%';
+    if (bytes) bytes.textContent      = `${uploadedMB} MB / ${totalMB} MB`;
+    if (speed) speed.textContent      = (speedMBps && speedMBps !== '—') ? `${speedMBps} MB/s` : '';
   }
 
   // ══════════════════════════════════════════════════════════

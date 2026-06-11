@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="css/admin.css?v=2.51" />
+  <link rel="stylesheet" href="css/admin.css?v=2.61" />
 </head>
 
 <body>
@@ -55,12 +55,12 @@
           <input id="total_paneles" name="total_paneles" type="number" min="1" placeholder="Ej: 500" required />
         </div>
 
-        <!-- 2. Strings desconectados: toggle izquierda, módulos derecha (si Sí) -->
+        <!-- 2. Módulos desconectados: toggle izquierda, módulos derecha (si Sí) -->
         <div class="form-row">
           <div class="form-group">
             <div class="toggle-group">
-              <label>¿Strings desconectados?</label>
-              <div class="toggle-pill" role="group" aria-label="¿Existen strings desconectados?">
+              <label>¿Módulos desconectados?</label>
+              <div class="toggle-pill" role="group" aria-label="¿Existen módulos desconectados?">
                 <button type="button" id="toggleStringNo" class="active" aria-pressed="true">No</button>
                 <button type="button" id="toggleStringYes" aria-pressed="false">Sí</button>
               </div>
@@ -110,7 +110,24 @@
           <label for="pdfFile">Informe PDF <span class="required">*</span></label>
           <input id="pdfFile" name="pdfFile" type="file" accept="application/pdf"
             style="font-size:.85rem;padding:.5rem .9rem;border:1px solid var(--clr-border);border-radius:var(--radius-sm);background:var(--clr-surface);"/>
-          <span class="hint">Máximo 500 MB. El PDF se procesará automáticamente para extraer anomalías.</span>
+          <span class="hint">Hasta 2 GB. Archivos grandes se suben por fragmentos automáticamente.</span>
+
+          <!-- Barra de progreso (visible solo durante la subida) -->
+          <div id="uploadProgressWrap" style="display:none;margin-top:.85rem;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.35rem;">
+              <span id="uploadProgressLabel" style="font-size:.82rem;font-weight:600;color:var(--clr-text);">Subiendo PDF...</span>
+              <span id="uploadProgressPct" style="font-size:.82rem;color:var(--clr-accent, #6366f1);font-weight:700;">0%</span>
+            </div>
+            <div style="height:8px;background:var(--clr-border,#e2e8f0);border-radius:999px;overflow:hidden;">
+              <div id="uploadProgressBar"
+                style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:999px;transition:width .3s ease;"
+              ></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:.3rem;">
+              <span id="uploadProgressBytes" style="font-size:.76rem;color:var(--clr-muted,#94a3b8);">0 MB / 0 MB</span>
+              <span id="uploadProgressSpeed" style="font-size:.76rem;color:var(--clr-muted,#94a3b8);"></span>
+            </div>
+          </div>
         </div>
 
         <button type="submit" id="submitBtn" class="btn-primary">
@@ -131,7 +148,7 @@
 
   </main>
 
-  <script src="js/admin.js?v=2.57"></script>
+  <script src="js/admin.js?v=2.61"></script>
 </body>
 
 </html>
